@@ -33,6 +33,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseTimeEntity {
 
+	private static final String DELETED_NICKNAME = "탈퇴한 사용자";
+	private static final String DELETED_PROVIDER_ID_PREFIX = "deleted_";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -62,6 +65,9 @@ public class User extends BaseTimeEntity {
 	@ColumnDefault("false")
 	private boolean marketingSnsAgreed;
 
+	@Column(name = "deleted_at")
+	private LocalDateTime deletedAt;
+
 	@Builder
 	private User(Provider provider, String providerId, String nickname, String profileImageUrl,
 				  LocalDateTime termsAgreedAt, boolean marketingEmailAgreed, boolean marketingSnsAgreed) {
@@ -72,5 +78,20 @@ public class User extends BaseTimeEntity {
 		this.termsAgreedAt = termsAgreedAt;
 		this.marketingEmailAgreed = marketingEmailAgreed;
 		this.marketingSnsAgreed = marketingSnsAgreed;
+	}
+
+	public void agreeToTerms(boolean marketingEmailAgreed, boolean marketingSnsAgreed) {
+		if (this.termsAgreedAt == null) {
+			this.termsAgreedAt = LocalDateTime.now();
+		}
+		this.marketingEmailAgreed = marketingEmailAgreed;
+		this.marketingSnsAgreed = marketingSnsAgreed;
+	}
+
+	public void softDelete() {
+		this.deletedAt = LocalDateTime.now();
+		this.nickname = DELETED_NICKNAME;
+		this.profileImageUrl = null;
+		this.providerId = DELETED_PROVIDER_ID_PREFIX + this.id;
 	}
 }

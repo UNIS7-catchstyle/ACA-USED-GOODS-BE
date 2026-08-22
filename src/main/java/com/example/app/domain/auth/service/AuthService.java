@@ -33,7 +33,7 @@ public class AuthService {
 		OAuthClient oAuthClient = oAuthClientFactory.getClient(provider);
 		OAuthUserInfo userInfo = oAuthClient.getUserInfo(accessToken);
 
-		User existing = userRepository.findByProviderAndProviderId(provider, userInfo.providerId()).orElse(null);
+		User existing = userRepository.findByProviderAndProviderIdAndDeletedAtIsNull(provider, userInfo.providerId()).orElse(null);
 		boolean isNewUser = existing == null;
 		User user = isNewUser
 				? userRepository.save(User.builder()

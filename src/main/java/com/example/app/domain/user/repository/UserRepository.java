@@ -8,7 +8,9 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
-	Optional<User> findByProviderAndProviderId(Provider provider, String providerId);
+	Optional<User> findByProviderAndProviderIdAndDeletedAtIsNull(Provider provider, String providerId);
+
+	Optional<User> findByIdAndDeletedAtIsNull(Long id);
 
 	boolean existsByNickname(String nickname);
 }
