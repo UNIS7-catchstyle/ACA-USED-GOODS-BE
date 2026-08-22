@@ -19,7 +19,12 @@ public enum ErrorCode {
 	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized"),
 	FORBIDDEN(HttpStatus.FORBIDDEN, "A002", "Forbidden"),
 	INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A003", "Invalid token"),
-	EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "A004", "Expired token"),
+	TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "A004", "Token expired"),
+	INVALID_OAUTH_TOKEN(HttpStatus.UNAUTHORIZED, "A005", "Invalid OAuth token"),
+	OAUTH_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY, "A006", "OAuth provider error"),
+
+	// User (U)
+	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "User not found"),
 	;
 
 	// Domain codes reserve one prefix letter each: User(U), Market(M), Scrap(S), Comment(C), Image(I)
