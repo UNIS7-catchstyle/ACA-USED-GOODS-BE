@@ -25,7 +25,19 @@ Spring Boot 3.5 + Java 17 + Gradle(Kotlin DSL) 기반 백엔드 스켈레톤.
 ./gradlew clean build
 ```
 
-테스트는 `test` 프로파일로 실행되며 DataSource/JPA 자동설정을 제외해 DB 없이 통과합니다.
+테스트는 `test` 프로파일로 실행되며 H2 인메모리 DB(`ddl-auto: create-drop`)를 사용합니다.
+
+## 카카오 실 토큰으로 로그인 수동 검증
+
+1. [카카오 개발자 콘솔](https://developers.kakao.com) → 내 애플리케이션 → 앱 생성 후 REST API 키 확인.
+2. 좌측 메뉴 "도구 > 토큰 발급/재발급" (또는 카카오 로그인 REST API 문서의 "토큰 발급" 페이지)에서 해당 앱으로 로그인해 **테스트용 access token**을 발급받습니다.
+3. 발급받은 토큰으로 로그인 호출:
+   ```
+   curl -X POST http://localhost:8080/api/auth/login/kakao \
+     -H "Content-Type: application/json" \
+     -d '{"accessToken":"<발급받은 카카오 access token>"}'
+   ```
+4. 응답의 `data.accessToken`/`data.refreshToken` 발급 여부와, DB `users` 테이블에 랜덤 닉네임(`형용사 명사NNNN`)으로 신규 유저가 생성됐는지 확인합니다.
 
 ## 패키지 구조
 
