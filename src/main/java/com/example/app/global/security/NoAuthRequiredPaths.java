@@ -3,9 +3,9 @@ package com.example.app.global.security;
 // Endpoints that need no token at all — shared by SecurityConfig (permitAll) and
 // JwtAuthenticationFilter (shouldNotFilter), so a garbage/expired Authorization
 // header on these paths never blocks the request with a 401.
-final class NoAuthRequiredPaths {
+public final class NoAuthRequiredPaths {
 
-	static final String[] PATTERNS = {
+	public static final String[] PATTERNS = {
 			"/swagger-ui/**",
 			"/swagger-ui.html",
 			"/v3/api-docs/**",
