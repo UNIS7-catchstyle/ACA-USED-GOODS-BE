@@ -1,9 +1,13 @@
 package com.example.app.domain.user.service;
 
+import com.example.app.domain.comment.repository.CommentRepository;
+import com.example.app.domain.market.repository.MarketImageRepository;
 import com.example.app.domain.market.repository.MarketRepository;
+import com.example.app.domain.scrap.repository.ScrapRepository;
 import com.example.app.domain.user.dto.MeResponse;
 import com.example.app.domain.user.dto.TermsAgreementRequest;
 import com.example.app.domain.user.entity.User;
+import com.example.app.domain.user.repository.RefreshTokenRepository;
 import com.example.app.domain.user.repository.UserRepository;
 import com.example.app.global.exception.BusinessException;
 import com.example.app.global.exception.ErrorCode;
@@ -15,8 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
 
+	private static final String DELETED_COMMENT_CONTENT = "삭제된 댓글입니다";
+
 	private final UserRepository userRepository;
 	private final MarketRepository marketRepository;
+	private final MarketImageRepository marketImageRepository;
+	private final ScrapRepository scrapRepository;
+	private final RefreshTokenRepository refreshTokenRepository;
+	private final CommentRepository commentRepository;
 
 	@Transactional(readOnly = true)
 	public MeResponse getMe(Long userId) {
@@ -32,6 +42,30 @@ public class UserService {
 		}
 		User user = getActiveUserOrThrow(userId);
 		user.agreeToTerms(request.marketingEmailAgreed(), request.marketingSnsAgreed());
+	}
+
+	@Transactional
+	public void withdraw(Long userId) {
+		User user = getActiveUserOrThrow(userId);
+
+		marketRepository.findByUserId(userId).ifPresent(market -> {
+			// Deleted explicitly rather than left to the images cascade: Hibernate's
+			// auto-flush (triggered by an unrelated derived-delete query right after)
+			// mishandles removing a Market whose lazy `images` was never initialized.
+			marketImageRepository.deleteByMarketId(market.getId());
+			commentRepository.deleteByMarketId(market.getId());
+			scrapRepository.deleteByMarketId(market.getId());
+			marketRepository.delete(market);
+		});
+		scrapRepository.deleteByUserId(userId);
+		refreshTokenRepository.deleteByUserId(userId);
+
+		// Must run before the redact call below: its flushAutomatically persists this
+		// mutation, and its clearAutomatically would otherwise detach `user` first,
+		// silently dropping the change.
+		user.softDelete();
+
+		commentRepository.redactByUserId(userId, DELETED_COMMENT_CONTENT);
 	}
 
 	private User getActiveUserOrThrow(Long userId) {

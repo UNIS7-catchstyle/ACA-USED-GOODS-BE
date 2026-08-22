@@ -7,6 +7,7 @@ import com.example.app.global.response.ApiResponse;
 import com.example.app.global.security.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,6 +29,12 @@ public class UserController {
 	@PostMapping("/me/terms")
 	public ApiResponse<Void> agreeToTerms(@CurrentUser Long userId, @Valid @RequestBody TermsAgreementRequest request) {
 		userService.agreeToTerms(userId, request);
+		return ApiResponse.success();
+	}
+
+	@DeleteMapping("/me")
+	public ApiResponse<Void> deleteMe(@CurrentUser Long userId) {
+		userService.withdraw(userId);
 		return ApiResponse.success();
 	}
 }
