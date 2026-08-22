@@ -9,6 +9,15 @@ spring:
       ddl-auto: validate
     show-sql: false
 
+storage:
+  type: s3
+  s3:
+    bucket: ${STORAGE_S3_BUCKET}
+    region: ${STORAGE_S3_REGION}
+    access-key: ${STORAGE_S3_ACCESS_KEY}
+    secret-key: ${STORAGE_S3_SECRET_KEY}
+    public-url-prefix: ${STORAGE_S3_PUBLIC_URL_PREFIX:}
+
 logging:
   level:
     root: warn

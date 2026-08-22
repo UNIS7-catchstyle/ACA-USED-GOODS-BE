@@ -12,6 +12,12 @@ spring:
       hibernate:
         format_sql: true
 
+storage:
+  type: local
+  local:
+    base-dir: ${STORAGE_LOCAL_BASE_DIR:./uploads}
+    base-url: ${STORAGE_LOCAL_BASE_URL:http://localhost:8080/uploads}
+
 logging:
   level:
     org.hibernate.SQL: debug

@@ -1,6 +1,10 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    # random.uuid: each distinct Spring test context (different @DynamicPropertySource
+    # values, webEnvironment, etc.) gets its own H2 instance. Without this, contexts
+    # sharing the DB_CLOSE_DELAY=-1-kept-alive "test" instance stomp on each other's
+    # data across test classes that Spring's context cache doesn't merge.
+    url: jdbc:h2:mem:test-${random.uuid};MODE=MySQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -13,3 +17,9 @@ jwt:
   secret: Gico0eNlKI9orNREGysJyheNO7H5jmCYW8mdJUQQSSLwS/UdBRt+MkWWtTcFnvd1cudqDfApIvlVxLavrxMXPg==
   access-token-expiration: 3600000
   refresh-token-expiration: 1209600000
+
+storage:
+  type: local
+  local:
+    base-dir: ./build/test-uploads
+    base-url: http://localhost:8080/uploads

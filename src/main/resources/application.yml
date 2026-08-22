@@ -10,6 +10,10 @@ spring:
       add-mappings: false
   jpa:
     open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 210MB
 
 jwt:
   secret: ${JWT_SECRET:7NDBdL9Qu4rOhQhDG2eA58RWw2mkbyG09pSOaER68XurUlF5xcAfgGusXEAlOXPej1uY8OwBu5G+WF7sWKeGjg==}
