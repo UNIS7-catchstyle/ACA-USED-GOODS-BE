@@ -12,8 +12,9 @@ spring:
     open-in-view: false
 
 jwt:
-  secret: ${JWT_SECRET:local-dev-only-jwt-secret-key-please-change-0000}
-  expiration: ${JWT_EXPIRATION:3600000}
+  secret: ${JWT_SECRET:7NDBdL9Qu4rOhQhDG2eA58RWw2mkbyG09pSOaER68XurUlF5xcAfgGusXEAlOXPej1uY8OwBu5G+WF7sWKeGjg==}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:1209600000}
 
 springdoc:
   swagger-ui:

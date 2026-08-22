@@ -3,6 +3,7 @@ package com.example.app.global.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -16,12 +17,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-	private static final String[] PERMIT_ALL_PATHS = {
-			"/swagger-ui/**",
-			"/swagger-ui.html",
-			"/v3/api-docs/**",
-			"/api/health",
-			"/api/auth/**"
+	// Auth-optional: no token required, but a valid token (if sent) still populates the principal
+	private static final String[] PERMIT_ALL_GET_PATHS = {
+			"/api/markets",
+			"/api/markets/*"
 	};
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -40,7 +39,8 @@ public class SecurityConfig {
 						.authenticationEntryPoint(jwtAuthenticationEntryPoint)
 						.accessDeniedHandler(jwtAccessDeniedHandler))
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers(PERMIT_ALL_PATHS).permitAll()
+						.requestMatchers(NoAuthRequiredPaths.PATTERNS).permitAll()
+						.requestMatchers(HttpMethod.GET, PERMIT_ALL_GET_PATHS).permitAll()
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
