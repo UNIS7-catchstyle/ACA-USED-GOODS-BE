@@ -1,12 +1,9 @@
 package com.example.app.global.security;
 
 import com.example.app.global.exception.ErrorCode;
-import com.example.app.global.response.ApiResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -25,13 +22,13 @@ import java.util.List;
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 	private final List<HandlerMapping> handlerMappings;
-	private final ObjectMapper objectMapper;
+	private final SecurityResponseWriter securityResponseWriter;
 
 	@Override
 	public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
 			throws IOException {
 		ErrorCode errorCode = handlerExists(request) ? ErrorCode.UNAUTHORIZED : ErrorCode.NOT_FOUND;
-		writeErrorResponse(response, errorCode);
+		securityResponseWriter.write(response, errorCode);
 	}
 
 	private boolean handlerExists(HttpServletRequest request) {
@@ -45,12 +42,5 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 			}
 		}
 		return false;
-	}
-
-	private void writeErrorResponse(HttpServletResponse response, ErrorCode errorCode) throws IOException {
-		response.setStatus(errorCode.getHttpStatus().value());
-		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-		response.setCharacterEncoding("UTF-8");
-		response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.error(errorCode)));
 	}
 }
