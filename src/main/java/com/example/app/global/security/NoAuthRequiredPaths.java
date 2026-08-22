@@ -11,7 +11,8 @@ public final class NoAuthRequiredPaths {
 			"/v3/api-docs/**",
 			"/api/health",
 			"/api/auth/login/**",
-			"/api/auth/reissue"
+			"/api/auth/reissue",
+			"/uploads/**"
 	};
 
 	private NoAuthRequiredPaths() {

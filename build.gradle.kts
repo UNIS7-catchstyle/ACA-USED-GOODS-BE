@@ -18,6 +18,13 @@ repositories {
 }
 
 val jjwtVersion = "0.12.7"
+val awsSdkVersion = "2.54.2"
+
+dependencyManagement {
+	imports {
+		mavenBom("software.amazon.awssdk:bom:$awsSdkVersion")
+	}
+}
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
@@ -29,6 +36,8 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:$jjwtVersion")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jjwtVersion")
+
+	implementation("software.amazon.awssdk:s3")
 
 	runtimeOnly("com.mysql:mysql-connector-j:26.7.0")
 

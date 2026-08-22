@@ -38,3 +38,6 @@ out/
 
 ### Env ###
 .env
+
+### Local image storage ###
+uploads/
