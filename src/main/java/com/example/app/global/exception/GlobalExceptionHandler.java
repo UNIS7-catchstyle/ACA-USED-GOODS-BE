@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -26,7 +27,14 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
 		log.warn("BusinessException: {}", e.getMessage());
 		ErrorCode errorCode = e.getErrorCode();
-		return ResponseEntity.status(errorCode.getHttpStatus()).body(ApiResponse.error(errorCode));
+		return ResponseEntity.status(errorCode.getHttpStatus())
+				.body(ApiResponse.errorWithMessage(errorCode, e.getMessage()));
+	}
+
+	@ExceptionHandler(MaxUploadSizeExceededException.class)
+	public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+		return ResponseEntity.status(ErrorCode.IMAGE_SIZE_EXCEEDED.getHttpStatus())
+				.body(ApiResponse.error(ErrorCode.IMAGE_SIZE_EXCEEDED));
 	}
 
 	@ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})

@@ -27,6 +27,12 @@ public enum ErrorCode {
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "User not found"),
 	TERMS_REQUIRED_NOT_AGREED(HttpStatus.BAD_REQUEST, "U002", "Required terms not agreed"),
 	TERMS_NOT_AGREED(HttpStatus.FORBIDDEN, "U003", "Terms not agreed"),
+
+	// Image (I)
+	IMAGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "I001", "Image limit exceeded"),
+	IMAGE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "I002", "Image size exceeded"),
+	INVALID_IMAGE_TYPE(HttpStatus.BAD_REQUEST, "I003", "Invalid image type"),
+	IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "I004", "Image upload failed"),
 	;
 
 	// Domain codes reserve one prefix letter each: User(U), Market(M), Scrap(S), Comment(C), Image(I)
