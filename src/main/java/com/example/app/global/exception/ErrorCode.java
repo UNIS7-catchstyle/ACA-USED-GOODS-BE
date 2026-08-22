@@ -25,6 +25,8 @@ public enum ErrorCode {
 
 	// User (U)
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "User not found"),
+	TERMS_REQUIRED_NOT_AGREED(HttpStatus.BAD_REQUEST, "U002", "Required terms not agreed"),
+	TERMS_NOT_AGREED(HttpStatus.FORBIDDEN, "U003", "Terms not agreed"),
 	;
 
 	// Domain codes reserve one prefix letter each: User(U), Market(M), Scrap(S), Comment(C), Image(I)

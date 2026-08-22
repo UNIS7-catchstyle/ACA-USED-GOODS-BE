@@ -58,6 +58,7 @@
         marketing_email_agreed bit default false not null,
         marketing_sns_agreed bit default false not null,
         created_at datetime(6),
+        deleted_at datetime(6),
         id bigint not null auto_increment,
         terms_agreed_at datetime(6),
         updated_at datetime(6),

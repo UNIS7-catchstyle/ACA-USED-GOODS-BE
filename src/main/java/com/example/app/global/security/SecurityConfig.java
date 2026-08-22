@@ -17,12 +17,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-	// Auth-optional: no token required, but a valid token (if sent) still populates the principal
-	private static final String[] PERMIT_ALL_GET_PATHS = {
-			"/api/markets",
-			"/api/markets/*"
-	};
-
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 	private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
@@ -40,7 +34,7 @@ public class SecurityConfig {
 						.accessDeniedHandler(jwtAccessDeniedHandler))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(NoAuthRequiredPaths.PATTERNS).permitAll()
-						.requestMatchers(HttpMethod.GET, PERMIT_ALL_GET_PATHS).permitAll()
+						.requestMatchers(HttpMethod.GET, AuthOptionalPaths.GET_PATTERNS).permitAll()
 						.anyRequest().authenticated())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
