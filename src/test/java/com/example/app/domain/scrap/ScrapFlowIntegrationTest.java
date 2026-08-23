@@ -90,6 +90,19 @@ class ScrapFlowIntegrationTest {
 	}
 
 	@Test
+	void scrap_ownMarket_returns400SelfScrapNotAllowed() throws Exception {
+		User owner = createAgreedUser("owner2b");
+		Market market = seedMarket(owner, Category.KPOP, false);
+
+		mockMvc.perform(post("/api/markets/" + market.getId() + "/scrap").header("Authorization", "Bearer " + tokenFor(owner)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value(ErrorCode.SELF_SCRAP_NOT_ALLOWED.getCode()));
+
+		assertThat(scrapRepository.count()).isZero();
+		assertThat(marketRepository.findById(market.getId()).orElseThrow().getScrapCount()).isZero();
+	}
+
+	@Test
 	void unscrap_success_decrementsCountAndRemovesRow() throws Exception {
 		User owner = createAgreedUser("owner3");
 		User scraper = createAgreedUser("scraper3");

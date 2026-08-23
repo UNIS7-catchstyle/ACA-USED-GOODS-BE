@@ -34,8 +34,10 @@ public class ScrapService {
 
 	@Transactional
 	public ScrapResponse scrap(Long userId, Long marketId) {
-		if (!marketRepository.existsById(marketId)) {
-			throw new BusinessException(ErrorCode.MARKET_NOT_FOUND);
+		Long ownerId = marketRepository.findOwnerIdById(marketId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.MARKET_NOT_FOUND));
+		if (ownerId.equals(userId)) {
+			throw new BusinessException(ErrorCode.SELF_SCRAP_NOT_ALLOWED);
 		}
 		if (scrapRepository.existsByUserIdAndMarketId(userId, marketId)) {
 			throw new BusinessException(ErrorCode.SCRAP_ALREADY_EXISTS);

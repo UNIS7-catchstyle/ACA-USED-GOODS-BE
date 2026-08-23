@@ -43,6 +43,7 @@ public enum ErrorCode {
 
 	// Scrap (S)
 	SCRAP_ALREADY_EXISTS(HttpStatus.CONFLICT, "S001", "Scrap already exists"),
+	SELF_SCRAP_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "S002", "Self scrap not allowed"),
 	;
 
 	// Domain codes reserve one prefix letter each: User(U), Market(M), Scrap(S), Comment(C), Image(I)

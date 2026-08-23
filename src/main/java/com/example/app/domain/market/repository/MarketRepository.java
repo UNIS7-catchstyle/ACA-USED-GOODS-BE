@@ -21,6 +21,12 @@ public interface MarketRepository extends JpaRepository<Market, Long> {
 	@Query("SELECT m FROM Market m JOIN FETCH m.user WHERE m.id = :id")
 	Optional<Market> findByIdWithUser(@Param("id") Long id);
 
+	// Doubles as an existence check for ScrapService: empty means the market
+	// doesn't exist, present means it does and identifies the owner — one query
+	// instead of an existsById() followed by a separate ownership lookup.
+	@Query("SELECT m.user.id FROM Market m WHERE m.id = :id")
+	Optional<Long> findOwnerIdById(@Param("id") Long id);
+
 	// size+1 rows requested via Pageable(0, size+1); ORDER BY is spelled out here
 	// rather than derived from Pageable's Sort, since the cursor's tie-break on id
 	// needs to travel with the WHERE clause, not just the ORDER BY.
