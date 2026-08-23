@@ -3,9 +3,10 @@ package com.example.app.domain.comment.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// author.nickname / content already reflect a withdrawn author's soft-delete
-// substitution (User.softDelete() / CommentRepository.redactByUserId) — no special
-// casing needed here. children is never null, only ever an empty list at the leaves.
+// author.nickname reflects a withdrawn author's soft-delete substitution
+// (User.softDelete()) automatically — no special casing needed here. content/imageUrl
+// are left exactly as originally posted; withdrawal does not touch a user's comments.
+// children is never null, only ever an empty list at the leaves.
 public record CommentNode(
 		Long id,
 		Author author,

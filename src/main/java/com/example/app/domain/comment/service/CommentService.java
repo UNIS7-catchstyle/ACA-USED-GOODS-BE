@@ -23,8 +23,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CommentService {
 
-	private static final String DELETED_COMMENT_CONTENT = "삭제된 댓글입니다";
-
 	private final CommentRepository commentRepository;
 	private final MarketRepository marketRepository;
 	private final UserRepository userRepository;
@@ -93,16 +91,6 @@ public class CommentService {
 		return commentRepository.findById(parentId)
 				.filter(comment -> comment.getMarket().getId().equals(marketId))
 				.orElseThrow(() -> new BusinessException(ErrorCode.INVALID_PARENT_COMMENT));
-	}
-
-	// Called from UserService.withdraw(). Collects this user's comment image URLs
-	// before redacting, since the bulk UPDATE below nulls image_url out — losing
-	// the reference is exactly why the actual file deletion has to be gathered first.
-	@Transactional
-	public void redactAllByUser(Long userId) {
-		List<String> imageUrls = commentRepository.findImageUrlsByUserId(userId);
-		commentRepository.redactByUserId(userId, DELETED_COMMENT_CONTENT);
-		deleteImagesAfterCommit(imageUrls);
 	}
 
 	// Called from MarketService.deleteByOwner(). Comment rows go with the market
