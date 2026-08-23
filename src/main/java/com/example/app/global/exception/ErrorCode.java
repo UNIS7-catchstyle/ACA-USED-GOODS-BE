@@ -44,9 +44,14 @@ public enum ErrorCode {
 	// Scrap (S)
 	SCRAP_ALREADY_EXISTS(HttpStatus.CONFLICT, "S001", "Scrap already exists"),
 	SELF_SCRAP_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "S002", "Self scrap not allowed"),
+
+	// Comment (C1xx) — "C" is already taken by Common's C0xx codes above, so Comment
+	// uses a three-digit C1xx range instead of a bare C0xx one to avoid colliding.
+	INVALID_PARENT_COMMENT(HttpStatus.BAD_REQUEST, "C101", "Invalid parent comment"),
 	;
 
-	// Domain codes reserve one prefix letter each: User(U), Market(M), Scrap(S), Comment(C), Image(I)
+	// Domain codes reserve one prefix letter each: User(U), Market(M), Scrap(S), Image(I).
+	// Comment shares "C" with Common but is disambiguated by width (C1xx vs C0xx).
 
 	private final HttpStatus httpStatus;
 	private final String code;

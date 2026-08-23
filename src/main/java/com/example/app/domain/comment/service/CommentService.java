@@ -1,9 +1,13 @@
 package com.example.app.domain.comment.service;
 
 import com.example.app.domain.comment.dto.CommentNode;
+import com.example.app.domain.comment.dto.CommentRequest;
 import com.example.app.domain.comment.entity.Comment;
 import com.example.app.domain.comment.repository.CommentRepository;
+import com.example.app.domain.image.storage.ImageStorage;
 import com.example.app.domain.market.repository.MarketRepository;
+import com.example.app.domain.user.entity.User;
+import com.example.app.domain.user.repository.UserRepository;
 import com.example.app.global.exception.BusinessException;
 import com.example.app.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +22,8 @@ public class CommentService {
 
 	private final CommentRepository commentRepository;
 	private final MarketRepository marketRepository;
+	private final UserRepository userRepository;
+	private final ImageStorage imageStorage;
 	private final CommentTreeAssembler commentTreeAssembler;
 
 	@Transactional(readOnly = true)
@@ -40,5 +46,47 @@ public class CommentService {
 	private List<CommentNode> assembleTree(Long marketId) {
 		List<Comment> comments = commentRepository.findAllByMarketIdOrderByIdAsc(marketId);
 		return commentTreeAssembler.assemble(comments);
+	}
+
+	@Transactional
+	public CommentNode create(Long userId, Long marketId, CommentRequest request) {
+		if (!marketRepository.existsById(marketId)) {
+			throw new BusinessException(ErrorCode.MARKET_NOT_FOUND);
+		}
+		if (request.imageUrl() != null && !imageStorage.isOwnedUrl(request.imageUrl())) {
+			throw new BusinessException(ErrorCode.INVALID_IMAGE_URL);
+		}
+		Comment parent = resolveParent(request.parentId(), marketId);
+
+		User author = userRepository.findByIdAndDeletedAtIsNull(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+		Comment comment = Comment.builder()
+				.market(marketRepository.getReferenceById(marketId))
+				.user(author)
+				.parent(parent)
+				.content(request.content())
+				.imageUrl(request.imageUrl())
+				.build();
+		commentRepository.save(comment);
+
+		return new CommentNode(
+				comment.getId(),
+				new CommentNode.Author(author.getId(), author.getNickname()),
+				comment.getContent(),
+				comment.getImageUrl(),
+				comment.getCreatedAt(),
+				List.of());
+	}
+
+	private Comment resolveParent(Long parentId, Long marketId) {
+		if (parentId == null) {
+			return null;
+		}
+		// Missing entirely and "exists but belongs to a different market" are
+		// deliberately not distinguished — both are just an invalid parent.
+		return commentRepository.findById(parentId)
+				.filter(comment -> comment.getMarket().getId().equals(marketId))
+				.orElseThrow(() -> new BusinessException(ErrorCode.INVALID_PARENT_COMMENT));
 	}
 }
