@@ -40,6 +40,9 @@ public enum ErrorCode {
 	MARKET_ALREADY_EXISTS(HttpStatus.CONFLICT, "M002", "Market already exists"),
 	INVALID_CURSOR(HttpStatus.BAD_REQUEST, "M003", "Invalid cursor"),
 	MARKET_NOT_FOUND(HttpStatus.NOT_FOUND, "M004", "Market not found"),
+
+	// Scrap (S)
+	SCRAP_ALREADY_EXISTS(HttpStatus.CONFLICT, "S001", "Scrap already exists"),
 	;
 
 	// Domain codes reserve one prefix letter each: User(U), Market(M), Scrap(S), Comment(C), Image(I)
