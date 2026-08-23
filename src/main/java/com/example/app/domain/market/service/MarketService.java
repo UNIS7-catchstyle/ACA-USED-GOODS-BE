@@ -30,18 +30,12 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MarketService {
-
-	private static final int THUMBNAIL_LIMIT = 3;
 
 	private final MarketRepository marketRepository;
 	private final MarketImageRepository marketImageRepository;
@@ -50,6 +44,7 @@ public class MarketService {
 	private final UserRepository userRepository;
 	private final AppSettingService appSettingService;
 	private final ImageStorage imageStorage;
+	private final MarketSummaryAssembler marketSummaryAssembler;
 
 	@Transactional(readOnly = true)
 	public CursorPageResponse<MarketSummary> getMarkets(Long userId, Category category, boolean excludeClosed, String cursorParam, int size) {
@@ -70,19 +65,8 @@ public class MarketService {
 
 		boolean hasNext = fetched.size() > size;
 		List<Market> pageMarkets = hasNext ? fetched.subList(0, size) : fetched;
-		List<Long> marketIds = pageMarkets.stream().map(Market::getId).toList();
 
-		Set<Long> scrappedMarketIds = (userId != null && !marketIds.isEmpty())
-				? new HashSet<>(scrapRepository.findMarketIdsByUserIdAndMarketIdIn(userId, marketIds))
-				: Set.of();
-		Map<Long, List<String>> thumbnailsByMarketId = marketIds.isEmpty() ? Map.of() : groupThumbnails(marketIds);
-
-		List<MarketSummary> items = pageMarkets.stream()
-				.map(market -> MarketSummary.from(
-						market,
-						scrappedMarketIds.contains(market.getId()),
-						thumbnailsByMarketId.getOrDefault(market.getId(), List.of())))
-				.toList();
+		List<MarketSummary> items = marketSummaryAssembler.assemble(pageMarkets, userId);
 
 		String nextCursor = hasNext ? cursorOf(pageMarkets.get(pageMarkets.size() - 1)).encode() : null;
 		return new CursorPageResponse<>(totalCount, items, nextCursor, hasNext);
@@ -200,16 +184,6 @@ public class MarketService {
 		return marketImageRepository.findByMarketIdInOrderBySortOrderAsc(List.of(marketId)).stream()
 				.map(MarketImage::getImageUrl)
 				.toList();
-	}
-
-	private Map<Long, List<String>> groupThumbnails(List<Long> marketIds) {
-		Map<Long, List<String>> grouped = marketImageRepository.findByMarketIdInOrderBySortOrderAsc(marketIds).stream()
-				.collect(Collectors.groupingBy(
-						image -> image.getMarket().getId(),
-						LinkedHashMap::new,
-						Collectors.mapping(MarketImage::getImageUrl, Collectors.toList())));
-		grouped.replaceAll((id, urls) -> urls.size() <= THUMBNAIL_LIMIT ? urls : urls.subList(0, THUMBNAIL_LIMIT));
-		return grouped;
 	}
 
 	private Cursor cursorOf(Market market) {
