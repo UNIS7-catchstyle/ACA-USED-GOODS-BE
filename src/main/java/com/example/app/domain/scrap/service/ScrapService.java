@@ -73,6 +73,16 @@ public class ScrapService {
 		return new ScrapResponse(marketRepository.findScrapCountById(marketId), false);
 	}
 
+	// Called from UserService.withdraw() — decrements every OTHER market this user
+	// had scrapped. The user's own market (if any) is handled separately by
+	// MarketService.deleteByOwner(), which deletes the market itself.
+	@Transactional
+	public void deleteAllByUser(Long userId) {
+		List<Long> marketIds = scrapRepository.findMarketIdsByUserId(userId);
+		scrapRepository.deleteByUserId(userId);
+		marketIds.forEach(marketRepository::decrementScrapCount);
+	}
+
 	@Transactional(readOnly = true)
 	public CursorPageResponse<MarketSummary> getMyScraps(Long userId, Category category, boolean excludeClosed, String cursorParam, int size) {
 		LocalDateTime cursorCreatedAt = null;

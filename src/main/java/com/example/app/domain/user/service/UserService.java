@@ -3,7 +3,7 @@ package com.example.app.domain.user.service;
 import com.example.app.domain.comment.repository.CommentRepository;
 import com.example.app.domain.market.repository.MarketRepository;
 import com.example.app.domain.market.service.MarketService;
-import com.example.app.domain.scrap.repository.ScrapRepository;
+import com.example.app.domain.scrap.service.ScrapService;
 import com.example.app.domain.user.dto.MeResponse;
 import com.example.app.domain.user.dto.TermsAgreementRequest;
 import com.example.app.domain.user.entity.User;
@@ -24,7 +24,7 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final MarketRepository marketRepository;
 	private final MarketService marketService;
-	private final ScrapRepository scrapRepository;
+	private final ScrapService scrapService;
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final CommentRepository commentRepository;
 
@@ -49,7 +49,7 @@ public class UserService {
 		User user = getActiveUserOrThrow(userId);
 
 		marketService.deleteByOwner(userId);
-		scrapRepository.deleteByUserId(userId);
+		scrapService.deleteAllByUser(userId);
 		refreshTokenRepository.deleteByUserId(userId);
 
 		// Must run before the redact call below: its flushAutomatically persists this
