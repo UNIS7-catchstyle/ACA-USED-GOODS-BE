@@ -72,6 +72,11 @@ public class S3ImageStorage implements ImageStorage {
 		}
 	}
 
+	@Override
+	public boolean isOwnedUrl(String url) {
+		return extractKey(url) != null;
+	}
+
 	private String buildUrl(String key) {
 		if (publicUrlPrefix != null) {
 			return publicUrlPrefix + "/" + key;

@@ -82,6 +82,14 @@ public class Market extends BaseTimeEntity {
 		this.scrapCount = 0;
 	}
 
+	public void update(Category category, String title, String itemCategories, String description, boolean isClosed) {
+		this.category = category;
+		this.title = title;
+		this.itemCategories = itemCategories;
+		this.description = description;
+		this.isClosed = isClosed;
+	}
+
 	public void increaseScrapCount() {
 		this.scrapCount++;
 	}
