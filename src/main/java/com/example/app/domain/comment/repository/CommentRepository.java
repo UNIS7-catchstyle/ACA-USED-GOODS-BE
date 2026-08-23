@@ -28,4 +28,10 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 	// parentId naturally yields id-ascending children without a separate sort.
 	@Query("SELECT c FROM Comment c JOIN FETCH c.user WHERE c.market.id = :marketId ORDER BY c.id ASC")
 	List<Comment> findAllByMarketIdOrderByIdAsc(@Param("marketId") Long marketId);
+
+	@Query("SELECT c.imageUrl FROM Comment c WHERE c.user.id = :userId AND c.imageUrl IS NOT NULL")
+	List<String> findImageUrlsByUserId(@Param("userId") Long userId);
+
+	@Query("SELECT c.imageUrl FROM Comment c WHERE c.market.id = :marketId AND c.imageUrl IS NOT NULL")
+	List<String> findImageUrlsByMarketId(@Param("marketId") Long marketId);
 }

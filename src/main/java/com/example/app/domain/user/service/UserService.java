@@ -1,6 +1,6 @@
 package com.example.app.domain.user.service;
 
-import com.example.app.domain.comment.repository.CommentRepository;
+import com.example.app.domain.comment.service.CommentService;
 import com.example.app.domain.market.repository.MarketRepository;
 import com.example.app.domain.market.service.MarketService;
 import com.example.app.domain.scrap.service.ScrapService;
@@ -19,14 +19,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
 
-	private static final String DELETED_COMMENT_CONTENT = "삭제된 댓글입니다";
-
 	private final UserRepository userRepository;
 	private final MarketRepository marketRepository;
 	private final MarketService marketService;
 	private final ScrapService scrapService;
 	private final RefreshTokenRepository refreshTokenRepository;
-	private final CommentRepository commentRepository;
+	private final CommentService commentService;
 
 	@Transactional(readOnly = true)
 	public MeResponse getMe(Long userId) {
@@ -57,7 +55,7 @@ public class UserService {
 		// silently dropping the change.
 		user.softDelete();
 
-		commentRepository.redactByUserId(userId, DELETED_COMMENT_CONTENT);
+		commentService.redactAllByUser(userId);
 	}
 
 	private User getActiveUserOrThrow(Long userId) {

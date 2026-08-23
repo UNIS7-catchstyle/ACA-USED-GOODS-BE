@@ -10,15 +10,20 @@ import com.example.app.domain.user.entity.User;
 import com.example.app.domain.user.repository.UserRepository;
 import com.example.app.global.exception.BusinessException;
 import com.example.app.global.exception.ErrorCode;
+import com.example.app.global.transaction.AfterCommitRunner;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CommentService {
+
+	private static final String DELETED_COMMENT_CONTENT = "삭제된 댓글입니다";
 
 	private final CommentRepository commentRepository;
 	private final MarketRepository marketRepository;
@@ -88,5 +93,38 @@ public class CommentService {
 		return commentRepository.findById(parentId)
 				.filter(comment -> comment.getMarket().getId().equals(marketId))
 				.orElseThrow(() -> new BusinessException(ErrorCode.INVALID_PARENT_COMMENT));
+	}
+
+	// Called from UserService.withdraw(). Collects this user's comment image URLs
+	// before redacting, since the bulk UPDATE below nulls image_url out — losing
+	// the reference is exactly why the actual file deletion has to be gathered first.
+	@Transactional
+	public void redactAllByUser(Long userId) {
+		List<String> imageUrls = commentRepository.findImageUrlsByUserId(userId);
+		commentRepository.redactByUserId(userId, DELETED_COMMENT_CONTENT);
+		deleteImagesAfterCommit(imageUrls);
+	}
+
+	// Called from MarketService.deleteByOwner(). Comment rows go with the market
+	// regardless of author, so their image files need the same after-commit cleanup
+	// market images already get — otherwise they're orphaned on disk/S3 forever.
+	@Transactional
+	public void deleteAllByMarket(Long marketId) {
+		List<String> imageUrls = commentRepository.findImageUrlsByMarketId(marketId);
+		commentRepository.deleteByMarketId(marketId);
+		deleteImagesAfterCommit(imageUrls);
+	}
+
+	private void deleteImagesAfterCommit(List<String> imageUrls) {
+		if (imageUrls.isEmpty()) {
+			return;
+		}
+		AfterCommitRunner.run(() -> imageUrls.forEach(url -> {
+			try {
+				imageStorage.delete(url);
+			} catch (Exception e) {
+				log.warn("Failed to delete comment image after commit: url={}", url, e);
+			}
+		}));
 	}
 }
