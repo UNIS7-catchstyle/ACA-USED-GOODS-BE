@@ -33,6 +33,13 @@ public enum ErrorCode {
 	IMAGE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "I002", "Image size exceeded"),
 	INVALID_IMAGE_TYPE(HttpStatus.BAD_REQUEST, "I003", "Invalid image type"),
 	IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "I004", "Image upload failed"),
+	INVALID_IMAGE_URL(HttpStatus.BAD_REQUEST, "I005", "Invalid image url"),
+
+	// Market (M)
+	MARKET_REGISTRATION_CLOSED(HttpStatus.FORBIDDEN, "M001", "Market registration closed"),
+	MARKET_ALREADY_EXISTS(HttpStatus.CONFLICT, "M002", "Market already exists"),
+	INVALID_CURSOR(HttpStatus.BAD_REQUEST, "M003", "Invalid cursor"),
+	MARKET_NOT_FOUND(HttpStatus.NOT_FOUND, "M004", "Market not found"),
 	;
 
 	// Domain codes reserve one prefix letter each: User(U), Market(M), Scrap(S), Comment(C), Image(I)
