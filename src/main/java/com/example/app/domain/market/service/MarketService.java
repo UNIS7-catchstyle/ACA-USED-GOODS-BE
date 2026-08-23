@@ -1,6 +1,7 @@
 package com.example.app.domain.market.service;
 
-import com.example.app.domain.comment.repository.CommentRepository;
+import com.example.app.domain.comment.dto.CommentNode;
+import com.example.app.domain.comment.service.CommentService;
 import com.example.app.domain.image.storage.ImageStorage;
 import com.example.app.domain.market.dto.MarketDetail;
 import com.example.app.domain.market.dto.MarketIdResponse;
@@ -40,7 +41,7 @@ public class MarketService {
 	private final MarketRepository marketRepository;
 	private final MarketImageRepository marketImageRepository;
 	private final ScrapRepository scrapRepository;
-	private final CommentRepository commentRepository;
+	private final CommentService commentService;
 	private final UserRepository userRepository;
 	private final AppSettingService appSettingService;
 	private final ImageStorage imageStorage;
@@ -84,7 +85,8 @@ public class MarketService {
 		boolean isScrapped = userId != null && scrapRepository.existsByUserIdAndMarketId(userId, marketId);
 		boolean isOwner = userId != null && market.getUser().getId().equals(userId);
 		List<String> images = imageUrlsOf(marketId);
-		return MarketDetail.from(market, isScrapped, isOwner, images);
+		List<CommentNode> comments = commentService.getTreeForVerifiedMarket(marketId);
+		return MarketDetail.from(market, isScrapped, isOwner, images, comments);
 	}
 
 	@Transactional
@@ -140,7 +142,7 @@ public class MarketService {
 		deleteImagesAfterCommit(removedUrls);
 
 		boolean isScrapped = scrapRepository.existsByUserIdAndMarketId(userId, marketId);
-		return MarketDetail.from(market, isScrapped, true, newImageUrls);
+		return MarketDetail.from(market, isScrapped, true, newImageUrls, List.of());
 	}
 
 	@Transactional
@@ -150,7 +152,7 @@ public class MarketService {
 			List<String> imageUrls = imageUrlsOf(marketId);
 
 			marketImageRepository.deleteByMarketId(marketId);
-			commentRepository.deleteByMarketId(marketId);
+			commentService.deleteAllByMarket(marketId);
 			scrapRepository.deleteByMarketId(marketId);
 			marketRepository.delete(market);
 

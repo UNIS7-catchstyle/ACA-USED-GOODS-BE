@@ -167,8 +167,9 @@ class UserFlowIntegrationTest {
 		Comment otherUserCommentOnOwnMarket = commentRepository.save(Comment.builder()
 				.market(marketA).user(userB).content("userB on userA's market").build());
 
-		// userB's market: survives. userA's own comment there is redacted, not
-		// deleted, so userB's reply keeps a valid parent_id.
+		// userB's market: survives. userA's own comment there is left exactly as
+		// posted (content/image_url untouched) — only the User row is redacted —
+		// so userB's reply keeps a valid parent_id either way.
 		Market marketB = marketRepository.save(Market.builder()
 				.user(userB)
 				.category(Category.ETC)
@@ -177,7 +178,8 @@ class UserFlowIntegrationTest {
 				.description("market description")
 				.build());
 		Comment commentOnOtherMarket = commentRepository.save(Comment.builder()
-				.market(marketB).user(userA).content("userA on userB's market").build());
+				.market(marketB).user(userA).content("userA on userB's market")
+				.imageUrl("https://example.com/comment-image.png").build());
 		Comment replyToRedactedComment = commentRepository.save(Comment.builder()
 				.market(marketB).user(userB).parent(commentOnOtherMarket).content("userB's reply").build());
 
@@ -198,10 +200,11 @@ class UserFlowIntegrationTest {
 		assertThat(commentRepository.findById(commentOnOwnMarket.getId())).isEmpty();
 		assertThat(commentRepository.findById(otherUserCommentOnOwnMarket.getId())).isEmpty();
 
-		// userA's comment on a surviving market is redacted, not deleted
+		// userA's comment on a surviving market is left as-is, not redacted or deleted —
+		// only the author's User row is soft-deleted (nickname substitution happens there).
 		Comment reloadedComment = commentRepository.findById(commentOnOtherMarket.getId()).orElseThrow();
-		assertThat(reloadedComment.getContent()).isEqualTo("삭제된 댓글입니다");
-		assertThat(reloadedComment.getImageUrl()).isNull();
+		assertThat(reloadedComment.getContent()).isEqualTo("userA on userB's market");
+		assertThat(reloadedComment.getImageUrl()).isEqualTo("https://example.com/comment-image.png");
 
 		// so userB's reply to it keeps a valid, unaffected parent_id
 		Comment reloadedReply = commentRepository.findById(replyToRedactedComment.getId()).orElseThrow();

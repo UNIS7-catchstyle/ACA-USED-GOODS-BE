@@ -24,8 +24,7 @@ public record MarketDetail(
 		List<CommentNode> comments
 ) {
 
-	// Always empty until the Comment domain is implemented.
-	public static MarketDetail from(Market market, boolean isScrapped, boolean isOwner, List<String> images) {
+	public static MarketDetail from(Market market, boolean isScrapped, boolean isOwner, List<String> images, List<CommentNode> comments) {
 		return new MarketDetail(
 				market.getId(),
 				market.getTitle(),
@@ -39,7 +38,7 @@ public record MarketDetail(
 				isOwner,
 				new Author(market.getUser().getId(), market.getUser().getNickname()),
 				market.getCreatedAt(),
-				List.of());
+				comments);
 	}
 
 	public record Author(Long id, String nickname) {

@@ -1,6 +1,5 @@
 package com.example.app.domain.user.service;
 
-import com.example.app.domain.comment.repository.CommentRepository;
 import com.example.app.domain.market.repository.MarketRepository;
 import com.example.app.domain.market.service.MarketService;
 import com.example.app.domain.scrap.service.ScrapService;
@@ -19,14 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
 
-	private static final String DELETED_COMMENT_CONTENT = "삭제된 댓글입니다";
-
 	private final UserRepository userRepository;
 	private final MarketRepository marketRepository;
 	private final MarketService marketService;
 	private final ScrapService scrapService;
 	private final RefreshTokenRepository refreshTokenRepository;
-	private final CommentRepository commentRepository;
 
 	@Transactional(readOnly = true)
 	public MeResponse getMe(Long userId) {
@@ -52,12 +48,11 @@ public class UserService {
 		scrapService.deleteAllByUser(userId);
 		refreshTokenRepository.deleteByUserId(userId);
 
-		// Must run before the redact call below: its flushAutomatically persists this
-		// mutation, and its clearAutomatically would otherwise detach `user` first,
-		// silently dropping the change.
+		// Comments are deliberately left as-is (content, image_url) — only the user
+		// row itself is redacted. comment.user_id keeps pointing at this (now
+		// soft-deleted) row, so the author still resolves to the substituted
+		// nickname without any change needed on the Comment side.
 		user.softDelete();
-
-		commentRepository.redactByUserId(userId, DELETED_COMMENT_CONTENT);
 	}
 
 	private User getActiveUserOrThrow(Long userId) {
