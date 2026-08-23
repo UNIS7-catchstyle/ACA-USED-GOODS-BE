@@ -12,6 +12,7 @@ public final class NoAuthRequiredPaths {
 			"/api/health",
 			"/api/auth/login/**",
 			"/api/auth/reissue",
+			"/api/markets/registration-status",
 			"/uploads/**"
 	};
 
