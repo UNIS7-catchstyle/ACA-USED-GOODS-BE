@@ -7,7 +7,10 @@ final class AuthOptionalPaths {
 
 	static final String[] GET_PATTERNS = {
 			"/api/markets",
-			"/api/markets/*"
+			"/api/markets/*",
+			// "/api/markets/*" only matches one path segment past /api/markets/ (e.g.
+			// /api/markets/5), NOT /api/markets/5/comments — needs its own pattern.
+			"/api/markets/*/comments"
 	};
 
 	private AuthOptionalPaths() {
