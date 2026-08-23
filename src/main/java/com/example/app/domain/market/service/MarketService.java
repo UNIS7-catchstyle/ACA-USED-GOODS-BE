@@ -91,6 +91,15 @@ public class MarketService {
 		return MarketDetail.from(market, isScrapped, isOwner, images, comments);
 	}
 
+	// { "data": null } if the user has no market — mirrors the array/summary shape
+	// of GET /markets rather than a 404, since "no market yet" is a normal state.
+	@Transactional(readOnly = true)
+	public MarketSummary getMyMarket(Long userId) {
+		return marketRepository.findByUserId(userId)
+				.map(market -> marketSummaryAssembler.assemble(List.of(market), userId).get(0))
+				.orElse(null);
+	}
+
 	@Transactional
 	public MarketIdResponse register(Long userId, MarketRequest request) {
 		if (!appSettingService.isMarketRegistrationOpen()) {
