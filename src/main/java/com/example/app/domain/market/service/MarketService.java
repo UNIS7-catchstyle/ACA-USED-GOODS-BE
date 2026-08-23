@@ -29,7 +29,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
 
@@ -54,8 +56,8 @@ public class MarketService {
 		if (StringUtils.hasText(cursorParam)) {
 			try {
 				Cursor cursor = Cursor.decode(cursorParam);
-				cursorCreatedAt = cursor.createdAt();
-				cursorId = cursor.id();
+				cursorCreatedAt = toLocalDateTime(cursor.key1());
+				cursorId = cursor.key2();
 			} catch (IllegalArgumentException e) {
 				throw new BusinessException(ErrorCode.INVALID_CURSOR);
 			}
@@ -189,7 +191,15 @@ public class MarketService {
 	}
 
 	private Cursor cursorOf(Market market) {
-		return new Cursor(market.getCreatedAt(), market.getId());
+		return new Cursor(toEpochMillis(market.getCreatedAt()), market.getId());
+	}
+
+	private static long toEpochMillis(LocalDateTime dateTime) {
+		return dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+	}
+
+	private static LocalDateTime toLocalDateTime(long epochMillis) {
+		return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault());
 	}
 
 	private void deleteImagesAfterCommit(List<String> imageUrls) {
