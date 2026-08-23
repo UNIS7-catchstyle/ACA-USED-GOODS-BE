@@ -1,8 +1,8 @@
 package com.example.app.domain.user.service;
 
 import com.example.app.domain.comment.repository.CommentRepository;
-import com.example.app.domain.market.repository.MarketImageRepository;
 import com.example.app.domain.market.repository.MarketRepository;
+import com.example.app.domain.market.service.MarketService;
 import com.example.app.domain.scrap.repository.ScrapRepository;
 import com.example.app.domain.user.dto.MeResponse;
 import com.example.app.domain.user.dto.TermsAgreementRequest;
@@ -23,7 +23,7 @@ public class UserService {
 
 	private final UserRepository userRepository;
 	private final MarketRepository marketRepository;
-	private final MarketImageRepository marketImageRepository;
+	private final MarketService marketService;
 	private final ScrapRepository scrapRepository;
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final CommentRepository commentRepository;
@@ -48,15 +48,7 @@ public class UserService {
 	public void withdraw(Long userId) {
 		User user = getActiveUserOrThrow(userId);
 
-		marketRepository.findByUserId(userId).ifPresent(market -> {
-			// Deleted explicitly rather than left to the images cascade: Hibernate's
-			// auto-flush (triggered by an unrelated derived-delete query right after)
-			// mishandles removing a Market whose lazy `images` was never initialized.
-			marketImageRepository.deleteByMarketId(market.getId());
-			commentRepository.deleteByMarketId(market.getId());
-			scrapRepository.deleteByMarketId(market.getId());
-			marketRepository.delete(market);
-		});
+		marketService.deleteByOwner(userId);
 		scrapRepository.deleteByUserId(userId);
 		refreshTokenRepository.deleteByUserId(userId);
 
