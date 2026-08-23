@@ -275,12 +275,19 @@ class CommentFlowIntegrationTest {
 	}
 
 	@Test
-	void withdrawnAuthor_commentTreeShowsRedactedNicknameAndContent() throws Exception {
+	void withdrawnAuthor_commentTreeShowsRedactedNicknameButOriginalContentAndImage() throws Exception {
 		User owner = createAgreedUser("owner21");
 		Market market = seedMarket(owner);
 		User author = createAgreedUser("author21");
 		String authorToken = tokenFor(author);
-		Long commentId = postComment(market.getId(), authorToken, "will be redacted", null);
+
+		MvcResult postResult = mockMvc.perform(post("/api/markets/" + market.getId() + "/comments")
+						.header("Authorization", "Bearer " + authorToken)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"content\":\"kept as-is\",\"imageUrl\":\"http://localhost:8080/uploads/kept.png\"}"))
+				.andExpect(status().isCreated())
+				.andReturn();
+		Long commentId = dataOf(postResult).get("id").asLong();
 
 		mockMvc.perform(delete("/api/users/me").header("Authorization", "Bearer " + authorToken))
 				.andExpect(status().isOk());
@@ -290,8 +297,11 @@ class CommentFlowIntegrationTest {
 				.andReturn();
 		JsonNode node = dataArray(result).get(0);
 		assertThat(node.get("id").asLong()).isEqualTo(commentId);
+		// Only the User row is redacted (nickname substitution via User.softDelete());
+		// the comment itself — content and image_url — is left exactly as posted.
 		assertThat(node.get("author").get("nickname").asText()).isEqualTo("탈퇴한 사용자");
-		assertThat(node.get("content").asText()).isEqualTo("삭제된 댓글입니다");
+		assertThat(node.get("content").asText()).isEqualTo("kept as-is");
+		assertThat(node.get("imageUrl").asText()).isEqualTo("http://localhost:8080/uploads/kept.png");
 	}
 
 	// ---- helpers ----
