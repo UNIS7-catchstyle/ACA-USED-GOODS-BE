@@ -82,7 +82,7 @@ class UserFlowIntegrationTest {
 				.andExpect(jsonPath("$.code").value(ErrorCode.TERMS_NOT_AGREED.getCode()));
 
 		// 7. auth-optional GET is never blocked by the terms check
-		mockMvc.perform(get("/api/markets").header("Authorization", auth))
+		mockMvc.perform(get("/api/markets").param("category", "KPOP").header("Authorization", auth))
 				.andExpect(status().isOk());
 
 		// 8. /api/auth/** is terms-exempt
@@ -121,9 +121,12 @@ class UserFlowIntegrationTest {
 		assertThat(afterSecondAgreement.isMarketingEmailAgreed()).isTrue();
 		assertThat(afterSecondAgreement.isMarketingSnsAgreed()).isFalse();
 
-		// 6. agreed -> POST /api/markets passes the interceptor, hits the 501 stub
-		mockMvc.perform(post("/api/markets").header("Authorization", auth))
-				.andExpect(status().isNotImplemented());
+		// 6. agreed -> POST /api/markets passes the interceptor and reaches the real handler
+		mockMvc.perform(post("/api/markets")
+						.header("Authorization", auth)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"category\":\"ETC\",\"title\":\"t\",\"itemCategories\":\"c\",\"description\":\"d\"}"))
+				.andExpect(status().isCreated());
 
 		// 9. re-login after agreeing -> needsTermsAgreement=false
 		JsonNode reLogin = login();

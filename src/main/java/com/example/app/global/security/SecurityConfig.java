@@ -29,6 +29,10 @@ public class SecurityConfig {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.formLogin(AbstractHttpConfigurer::disable)
 				.httpBasic(AbstractHttpConfigurer::disable)
+				// Without this, Spring Security's default anonymous principal satisfies
+				// anyRequest().authenticated(), so a tokenless request to a protected path
+				// would sail through to DispatcherServlet instead of being blocked here.
+				.anonymous(AbstractHttpConfigurer::disable)
 				.exceptionHandling(exception -> exception
 						.authenticationEntryPoint(jwtAuthenticationEntryPoint)
 						.accessDeniedHandler(jwtAccessDeniedHandler))

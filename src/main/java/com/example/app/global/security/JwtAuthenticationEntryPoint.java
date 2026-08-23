@@ -7,40 +7,31 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.HandlerMapping;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Arrays;
 
-/**
- * Distinguishes "no token for an existing endpoint" (401) from "path does not
- * exist at all" (404) by checking whether any HandlerMapping actually resolves
- * the request, since unauthenticated requests never reach DispatcherServlet.
- */
+// Distinguishes "no token for a route within a known API domain" (401) — including
+// a domain's not-yet-implemented sub-routes, e.g. Scrap endpoints under
+// /api/markets — from "path isn't part of any real API domain at all" (404).
+// Relies on SecurityConfig disabling anonymous auth: otherwise the default
+// anonymous principal satisfies anyRequest().authenticated() and this entry point
+// never runs, letting an unmapped path fall through to DispatcherServlet's own 404.
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-	private final List<HandlerMapping> handlerMappings;
 	private final SecurityResponseWriter securityResponseWriter;
 
 	@Override
 	public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException)
 			throws IOException {
-		ErrorCode errorCode = handlerExists(request) ? ErrorCode.UNAUTHORIZED : ErrorCode.NOT_FOUND;
+		ErrorCode errorCode = withinKnownDomain(request) ? ErrorCode.UNAUTHORIZED : ErrorCode.NOT_FOUND;
 		securityResponseWriter.write(response, errorCode);
 	}
 
-	private boolean handlerExists(HttpServletRequest request) {
-		for (HandlerMapping handlerMapping : handlerMappings) {
-			try {
-				if (handlerMapping.getHandler(request) != null) {
-					return true;
-				}
-			} catch (Exception ignored) {
-				// this mapping cannot resolve the request; keep checking others
-			}
-		}
-		return false;
+	private boolean withinKnownDomain(HttpServletRequest request) {
+		String path = request.getRequestURI();
+		return Arrays.stream(KnownApiDomainPrefixes.PREFIXES).anyMatch(path::startsWith);
 	}
 }

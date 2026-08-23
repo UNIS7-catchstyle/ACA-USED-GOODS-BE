@@ -10,8 +10,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -48,6 +50,20 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(ConstraintViolationException.class)
 	public ResponseEntity<ApiResponse<Void>> handleConstraintViolationException(ConstraintViolationException e) {
+		return ResponseEntity.status(ErrorCode.INVALID_INPUT_VALUE.getHttpStatus())
+				.body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE));
+	}
+
+	// Spring MVC's native method-parameter validation (@Min/@Max directly on a
+	// @RequestParam) raises this instead of ConstraintViolationException.
+	@ExceptionHandler(HandlerMethodValidationException.class)
+	public ResponseEntity<ApiResponse<Void>> handleHandlerMethodValidationException(HandlerMethodValidationException e) {
+		return ResponseEntity.status(ErrorCode.INVALID_INPUT_VALUE.getHttpStatus())
+				.body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE));
+	}
+
+	@ExceptionHandler(MissingServletRequestParameterException.class)
+	public ResponseEntity<ApiResponse<Void>> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
 		return ResponseEntity.status(ErrorCode.INVALID_INPUT_VALUE.getHttpStatus())
 				.body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE));
 	}

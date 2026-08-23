@@ -60,6 +60,11 @@ public class LocalImageStorage implements ImageStorage {
 		}
 	}
 
+	@Override
+	public boolean isOwnedUrl(String url) {
+		return extractKey(url) != null;
+	}
+
 	private String extractKey(String url) {
 		String prefix = baseUrl + "/";
 		return url != null && url.startsWith(prefix) ? url.substring(prefix.length()) : null;
