@@ -22,19 +22,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+// No class-level @RequestMapping: /api/users/me/markets lives here by domain (same
+// principle as ScrapController/CommentController owning their own /users/me/*
+// endpoints), and a shared "/api/markets" prefix would wrongly get prepended to it.
 @Validated
 @RestController
-@RequestMapping("/api/markets")
 @RequiredArgsConstructor
 public class MarketController {
 
 	private final MarketService marketService;
 
-	@GetMapping
+	@GetMapping("/api/markets")
 	public ApiResponse<CursorPageResponse<MarketSummary>> list(
 			@CurrentUser(required = false) Long userId,
 			@RequestParam Category category,
@@ -44,24 +45,29 @@ public class MarketController {
 		return ApiResponse.success(marketService.getMarkets(userId, category, excludeClosed, cursor, size));
 	}
 
-	@PostMapping
+	@PostMapping("/api/markets")
 	public ResponseEntity<ApiResponse<MarketIdResponse>> create(@CurrentUser Long userId, @Valid @RequestBody MarketRequest request) {
 		MarketIdResponse response = marketService.register(userId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
 	}
 
-	@GetMapping("/registration-status")
+	@GetMapping("/api/markets/registration-status")
 	public ApiResponse<RegistrationStatusResponse> registrationStatus() {
 		return ApiResponse.success(marketService.getRegistrationStatus());
 	}
 
-	@GetMapping("/{id}")
+	@GetMapping("/api/markets/{id}")
 	public ApiResponse<MarketDetail> detail(@CurrentUser(required = false) Long userId, @PathVariable Long id) {
 		return ApiResponse.success(marketService.getDetail(userId, id));
 	}
 
-	@PutMapping("/{id}")
+	@PutMapping("/api/markets/{id}")
 	public ApiResponse<MarketDetail> update(@CurrentUser Long userId, @PathVariable Long id, @Valid @RequestBody MarketRequest request) {
 		return ApiResponse.success(marketService.update(userId, id, request));
+	}
+
+	@GetMapping("/api/users/me/markets")
+	public ApiResponse<MarketSummary> myMarket(@CurrentUser Long userId) {
+		return ApiResponse.success(marketService.getMyMarket(userId));
 	}
 }
