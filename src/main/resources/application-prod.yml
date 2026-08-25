@@ -18,6 +18,10 @@ storage:
     secret-key: ${STORAGE_S3_SECRET_KEY}
     public-url-prefix: ${STORAGE_S3_PUBLIC_URL_PREFIX:}
 
+cors:
+  # No default — prod must set the real frontend origin(s) explicitly.
+  allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
 logging:
   level:
     root: warn

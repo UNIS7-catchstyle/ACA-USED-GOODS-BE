@@ -57,9 +57,13 @@ public class GlobalExceptionHandler {
 	// Spring MVC's native method-parameter validation (@Min/@Max directly on a
 	// @RequestParam) raises this instead of ConstraintViolationException.
 	@ExceptionHandler(HandlerMethodValidationException.class)
-	public ResponseEntity<ApiResponse<Void>> handleHandlerMethodValidationException(HandlerMethodValidationException e) {
+	public ResponseEntity<ApiResponse<List<FieldErrorDetail>>> handleHandlerMethodValidationException(HandlerMethodValidationException e) {
+		List<FieldErrorDetail> details = e.getParameterValidationResults().stream()
+				.flatMap(result -> result.getResolvableErrors().stream()
+						.map(error -> new FieldErrorDetail(result.getMethodParameter().getParameterName(), error.getDefaultMessage())))
+				.toList();
 		return ResponseEntity.status(ErrorCode.INVALID_INPUT_VALUE.getHttpStatus())
-				.body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE));
+				.body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, details));
 	}
 
 	@ExceptionHandler(MissingServletRequestParameterException.class)

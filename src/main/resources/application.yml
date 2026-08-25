@@ -20,6 +20,11 @@ jwt:
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:1209600000}
 
+cors:
+  # local/test default to the frontend dev servers; prod overrides this in
+  # application-prod.yml with no default, so a missing env var fails fast on boot.
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
