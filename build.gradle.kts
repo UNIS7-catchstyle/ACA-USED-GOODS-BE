@@ -54,3 +54,10 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+// Only the executable boot jar is needed (Dockerfile COPYs build/libs/*.jar as a
+// single unambiguous file) — without this, Spring Boot's plugin also produces a
+// "-plain.jar" that leaves two matches for that wildcard.
+tasks.jar {
+	enabled = false
+}
