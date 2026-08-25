@@ -31,6 +31,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.9.0")
 
 	implementation("io.jsonwebtoken:jjwt-api:$jjwtVersion")
@@ -52,4 +53,11 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+// Only the executable boot jar is needed (Dockerfile COPYs build/libs/*.jar as a
+// single unambiguous file) — without this, Spring Boot's plugin also produces a
+// "-plain.jar" that leaves two matches for that wildcard.
+tasks.jar {
+	enabled = false
 }

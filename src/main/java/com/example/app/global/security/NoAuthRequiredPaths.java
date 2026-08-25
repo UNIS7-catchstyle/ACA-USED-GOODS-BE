@@ -10,6 +10,7 @@ public final class NoAuthRequiredPaths {
 			"/swagger-ui.html",
 			"/v3/api-docs/**",
 			"/api/health",
+			"/actuator/health",
 			"/api/auth/login/**",
 			"/api/auth/reissue",
 			"/api/markets/registration-status",

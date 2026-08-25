@@ -6,11 +6,22 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      # Defaults to validate (safe: fails fast on schema drift instead of silently
+      # altering prod tables). The very first deploy has no schema yet, so validate
+      # fails immediately — override with env var DDL_AUTO=update for that one
+      # deploy only, then remove it (see DEPLOY.md).
+      ddl-auto: ${DDL_AUTO:validate}
     show-sql: false
 
 storage:
-  type: s3
+  # Defaults to s3. Override with STORAGE_TYPE=local to run before S3 credentials
+  # are set up — see DEPLOY.md for why that's a demo-only, data-loses-on-redeploy option.
+  type: ${STORAGE_TYPE:s3}
+  local:
+    # Only relevant when STORAGE_TYPE=local. base-url must be the container's public
+    # domain (not the localhost default) or generated image URLs won't resolve.
+    base-dir: ${STORAGE_LOCAL_BASE_DIR:./uploads}
+    base-url: ${STORAGE_LOCAL_BASE_URL:http://localhost:8080/uploads}
   s3:
     bucket: ${STORAGE_S3_BUCKET}
     region: ${STORAGE_S3_REGION}

@@ -33,3 +33,14 @@ springdoc:
   api-docs:
     path: /v3/api-docs
   default-produces-media-type: application/json
+
+# Infra-facing health probe (Railway healthcheck etc). GET /api/health stays as-is
+# for the frontend/Swagger — this is a separate, deliberately minimal endpoint.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
