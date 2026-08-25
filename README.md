@@ -1,5 +1,7 @@
 # ACA Used Goods Backend
 
+[![CI](https://github.com/UNIS7-catchstyle/ACA-USED-GOODS-BE/actions/workflows/ci.yml/badge.svg)](https://github.com/UNIS7-catchstyle/ACA-USED-GOODS-BE/actions/workflows/ci.yml)
+
 Spring Boot 3.5 + Java 17 + Gradle(Kotlin DSL) 기반 백엔드 스켈레톤.
 
 ## 실행 순서
