@@ -33,6 +33,13 @@ cors:
   # No default — prod must set the real frontend origin(s) explicitly.
   allowed-origins: ${CORS_ALLOWED_ORIGINS}
 
+# Railway terminates TLS at its edge and forwards plain HTTP to this container,
+# setting X-Forwarded-Proto: https. Without this, Spring builds absolute URLs
+# (springdoc's "servers" entry, redirects, etc.) using the scheme it actually saw
+# — http — which the browser then blocks as mixed content on an https page.
+server:
+  forward-headers-strategy: framework
+
 logging:
   level:
     root: warn
