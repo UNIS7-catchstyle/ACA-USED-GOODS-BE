@@ -39,6 +39,11 @@ Spring Boot 3.5 + Java 17 + Gradle(Kotlin DSL) 기반 백엔드 스켈레톤.
    ```
 4. 응답의 `data.accessToken`/`data.refreshToken` 발급 여부와, DB `users` 테이블에 랜덤 닉네임(`형용사 명사NNNN`)으로 신규 유저가 생성됐는지 확인합니다.
 
+## 배포
+
+Railway(PaaS)에 Dockerfile 기반으로 배포합니다. 콘솔에서 해야 하는 작업은
+[DEPLOY.md](./DEPLOY.md)에 순서대로 정리되어 있습니다.
+
 ## 패키지 구조
 
 - `domain/{auth,user,market,scrap,comment,image}` — 도메인별 controller/service/repository/entity/dto 뼈대
