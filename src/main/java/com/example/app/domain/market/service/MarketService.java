@@ -23,7 +23,6 @@ import com.example.app.global.paging.CursorPageResponse;
 import com.example.app.global.transaction.AfterCommitRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +31,7 @@ import org.springframework.util.StringUtils;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -91,22 +91,16 @@ public class MarketService {
 		return MarketDetail.from(market, isScrapped, isOwner, images, comments);
 	}
 
-	// { "data": null } if the user has no market — mirrors the array/summary shape
-	// of GET /markets rather than a 404, since "no market yet" is a normal state.
 	@Transactional(readOnly = true)
-	public MarketSummary getMyMarket(Long userId) {
-		return marketRepository.findByUserId(userId)
-				.map(market -> marketSummaryAssembler.assemble(List.of(market), userId).get(0))
-				.orElse(null);
+	public List<MarketSummary> getMyMarkets(Long userId) {
+		List<Market> markets = marketRepository.findByUserId(userId);
+		return marketSummaryAssembler.assemble(markets, userId);
 	}
 
 	@Transactional
 	public MarketIdResponse register(Long userId, MarketRequest request) {
 		if (!appSettingService.isMarketRegistrationOpen()) {
 			throw new BusinessException(ErrorCode.MARKET_REGISTRATION_CLOSED);
-		}
-		if (marketRepository.existsByUserId(userId)) {
-			throw new BusinessException(ErrorCode.MARKET_ALREADY_EXISTS);
 		}
 		List<String> imageUrls = validateImageUrls(request.imageUrlsOrEmpty());
 
@@ -118,14 +112,7 @@ public class MarketService {
 				.description(request.description())
 				.build();
 
-		try {
-			// IDENTITY generation flushes this INSERT immediately, so the unique
-			// constraint violation (concurrent double-registration) surfaces right here.
-			marketRepository.save(market);
-		} catch (DataIntegrityViolationException e) {
-			throw new BusinessException(ErrorCode.MARKET_ALREADY_EXISTS);
-		}
-
+		marketRepository.save(market);
 		saveImages(market, imageUrls);
 		return new MarketIdResponse(market.getId());
 	}
@@ -158,17 +145,23 @@ public class MarketService {
 
 	@Transactional
 	public void deleteByOwner(Long userId) {
-		marketRepository.findByUserId(userId).ifPresent(market -> {
+		List<Market> markets = marketRepository.findByUserId(userId);
+		if (markets.isEmpty()) {
+			return;
+		}
+
+		List<String> allImageUrls = new ArrayList<>();
+		for (Market market : markets) {
 			Long marketId = market.getId();
-			List<String> imageUrls = imageUrlsOf(marketId);
+			allImageUrls.addAll(imageUrlsOf(marketId));
 
 			marketImageRepository.deleteByMarketId(marketId);
 			commentService.deleteAllByMarket(marketId);
 			scrapRepository.deleteByMarketId(marketId);
-			marketRepository.delete(market);
+		}
+		marketRepository.deleteAll(markets);
 
-			deleteImagesAfterCommit(imageUrls);
-		});
+		deleteImagesAfterCommit(allImageUrls);
 	}
 
 	private List<String> validateImageUrls(List<String> imageUrls) {

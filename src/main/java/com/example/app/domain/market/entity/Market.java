@@ -12,11 +12,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,10 +29,7 @@ import java.util.List;
 
 @Getter
 @Entity
-@Table(
-		name = "markets",
-		uniqueConstraints = @UniqueConstraint(name = "uk_markets_user_id", columnNames = "user_id")
-)
+@Table(name = "markets")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Market extends BaseTimeEntity {
 
@@ -41,8 +37,8 @@ public class Market extends BaseTimeEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_id", nullable = false, unique = true)
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", nullable = false)
 	private User user;
 
 	@Enumerated(EnumType.STRING)

@@ -69,10 +69,9 @@
         primary key (id)
     ) engine=InnoDB;
 
-    alter table markets 
-       add constraint uk_markets_user_id unique (user_id);
+    create index idx_markets_user_id on markets (user_id);
 
-    alter table refresh_tokens 
+    alter table refresh_tokens
        add constraint uk_refresh_tokens_user_id unique (user_id);
 
     alter table scraps 

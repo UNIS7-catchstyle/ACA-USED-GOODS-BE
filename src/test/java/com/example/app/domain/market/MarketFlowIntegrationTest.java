@@ -221,17 +221,26 @@ class MarketFlowIntegrationTest {
 	}
 
 	@Test
-	void register_secondTimeBySameUser_returns409MarketAlreadyExists() throws Exception {
+	void register_secondTimeBySameUser_bothSucceedAndPersistTwoRows() throws Exception {
 		String token = loginAndAgreeToTerms();
+		Long userId = userRepository.findAll().get(0).getId();
 		String body = "{\"category\":\"KPOP\",\"title\":\"t\",\"itemCategories\":\"c\",\"description\":\"d\"}";
 
-		mockMvc.perform(post("/api/markets").header("Authorization", "Bearer " + token)
+		MvcResult first = mockMvc.perform(post("/api/markets").header("Authorization", "Bearer " + token)
 						.contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isCreated());
-		mockMvc.perform(post("/api/markets").header("Authorization", "Bearer " + token)
+				.andExpect(status().isCreated())
+				.andReturn();
+		MvcResult second = mockMvc.perform(post("/api/markets").header("Authorization", "Bearer " + token)
 						.contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.code").value(ErrorCode.MARKET_ALREADY_EXISTS.getCode()));
+				.andExpect(status().isCreated())
+				.andReturn();
+
+		Long firstId = dataOf(first).get("id").asLong();
+		Long secondId = dataOf(second).get("id").asLong();
+		assertThat(firstId).isNotEqualTo(secondId);
+		assertThat(marketRepository.findByUserId(userId)).hasSize(2)
+				.extracting(Market::getId)
+				.containsExactlyInAnyOrder(firstId, secondId);
 	}
 
 	@Test

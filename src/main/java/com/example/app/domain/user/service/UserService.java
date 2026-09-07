@@ -27,8 +27,8 @@ public class UserService {
 	@Transactional(readOnly = true)
 	public MeResponse getMe(Long userId) {
 		User user = getActiveUserOrThrow(userId);
-		boolean hasMarket = marketRepository.existsByUserId(userId);
-		return new MeResponse(user.getId(), user.getNickname(), user.getProfileImageUrl(), hasMarket, user.getTermsAgreedAt() != null);
+		int marketCount = (int) marketRepository.countByUserId(userId);
+		return new MeResponse(user.getId(), user.getNickname(), user.getProfileImageUrl(), marketCount > 0, marketCount, user.getTermsAgreedAt() != null);
 	}
 
 	@Transactional

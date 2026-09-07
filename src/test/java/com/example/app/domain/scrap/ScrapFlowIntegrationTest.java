@@ -267,7 +267,7 @@ class ScrapFlowIntegrationTest {
 		String token = tokenFor(scraper);
 		Set<Long> scrappedIds = new HashSet<>();
 		for (int i = 0; i < 5; i++) {
-			// uk_markets_user_id allows only one market per user, so each market needs its own owner.
+			// Self-scrap isn't allowed, so the scraper can't own the market being scrapped.
 			Market market = seedMarket(createAgreedUser("owner12-" + i), Category.ETC, false);
 			mockMvc.perform(post("/api/markets/" + market.getId() + "/scrap").header("Authorization", "Bearer " + token))
 					.andExpect(status().isOk());

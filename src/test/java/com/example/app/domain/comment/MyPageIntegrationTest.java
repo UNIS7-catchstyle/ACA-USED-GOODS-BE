@@ -52,23 +52,30 @@ class MyPageIntegrationTest {
 	private JwtTokenProvider jwtTokenProvider;
 
 	@Test
-	void myMarket_noMarket_returnsDataNull() throws Exception {
+	void myMarkets_noMarket_returnsEmptyArray() throws Exception {
 		User user = createAgreedUser("nomarket14");
 
 		mockMvc.perform(get("/api/users/me/markets").header("Authorization", "Bearer " + tokenFor(user)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data").doesNotExist());
+				.andExpect(jsonPath("$.data").isArray())
+				.andExpect(jsonPath("$.data.length()").value(0));
 	}
 
 	@Test
-	void myMarket_hasMarket_returnsSummaryEvenIfClosed() throws Exception {
+	void myMarkets_twoMarkets_returnsBothIncludingClosedOnes() throws Exception {
 		User owner = createAgreedUser("owner15");
-		Market market = seedMarket(owner, Category.ETC, true);
+		Market marketA = seedMarket(owner, Category.ETC, false);
+		Market marketB = seedMarket(owner, Category.ETC, true);
 
-		mockMvc.perform(get("/api/users/me/markets").header("Authorization", "Bearer " + tokenFor(owner)))
+		MvcResult result = mockMvc.perform(get("/api/users/me/markets").header("Authorization", "Bearer " + tokenFor(owner)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.id").value(market.getId()))
-				.andExpect(jsonPath("$.data.isClosed").value(true));
+				.andExpect(jsonPath("$.data.length()").value(2))
+				.andReturn();
+
+		JsonNode items = dataOf(result);
+		Set<Long> ids = new HashSet<>();
+		items.forEach(item -> ids.add(item.get("id").asLong()));
+		assertThat(ids).containsExactlyInAnyOrder(marketA.getId(), marketB.getId());
 	}
 
 	@Test

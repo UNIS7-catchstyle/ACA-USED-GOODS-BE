@@ -37,7 +37,6 @@ public enum ErrorCode {
 
 	// Market (M)
 	MARKET_REGISTRATION_CLOSED(HttpStatus.FORBIDDEN, "M001", "Market registration closed"),
-	MARKET_ALREADY_EXISTS(HttpStatus.CONFLICT, "M002", "Market already exists"),
 	INVALID_CURSOR(HttpStatus.BAD_REQUEST, "M003", "Invalid cursor"),
 	MARKET_NOT_FOUND(HttpStatus.NOT_FOUND, "M004", "Market not found"),
 

@@ -74,7 +74,8 @@ class UserFlowIntegrationTest {
 		mockMvc.perform(get("/api/users/me").header("Authorization", auth))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.termsAgreed").value(false))
-				.andExpect(jsonPath("$.data.hasMarket").value(false));
+				.andExpect(jsonPath("$.data.hasMarket").value(false))
+				.andExpect(jsonPath("$.data.marketCount").value(0));
 
 		// 5. not agreed -> POST /api/markets -> 403 TERMS_NOT_AGREED
 		mockMvc.perform(post("/api/markets").header("Authorization", auth))
@@ -128,6 +129,18 @@ class UserFlowIntegrationTest {
 						.content("{\"category\":\"ETC\",\"title\":\"t\",\"itemCategories\":\"c\",\"description\":\"d\"}"))
 				.andExpect(status().isCreated());
 
+		// same user can register a second market — no more one-per-user limit
+		mockMvc.perform(post("/api/markets")
+						.header("Authorization", auth)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("{\"category\":\"KPOP\",\"title\":\"t2\",\"itemCategories\":\"c\",\"description\":\"d\"}"))
+				.andExpect(status().isCreated());
+
+		mockMvc.perform(get("/api/users/me").header("Authorization", auth))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.hasMarket").value(true))
+				.andExpect(jsonPath("$.data.marketCount").value(2));
+
 		// 9. re-login after agreeing -> needsTermsAgreement=false
 		JsonNode reLogin = login();
 		assertThat(reLogin.get("needsTermsAgreement").asBoolean()).isFalse();
@@ -146,8 +159,9 @@ class UserFlowIntegrationTest {
 				.nickname("other user")
 				.build());
 
-		// userA's own market: deleted wholesale on withdrawal, including every
-		// comment tied to it (own or not) and every scrap of it (own or not).
+		// userA now owns two markets: both are deleted wholesale on withdrawal,
+		// including every comment tied to them (own or not) and every scrap of
+		// them (own or not).
 		Market marketA = marketRepository.save(Market.builder()
 				.user(userA)
 				.category(Category.ETC)
@@ -166,6 +180,22 @@ class UserFlowIntegrationTest {
 				.market(marketA).user(userA).content("userA on their own market").build());
 		Comment otherUserCommentOnOwnMarket = commentRepository.save(Comment.builder()
 				.market(marketA).user(userB).content("userB on userA's market").build());
+
+		Market marketA2 = marketRepository.save(Market.builder()
+				.user(userA)
+				.category(Category.KPOP)
+				.title("userA's second market")
+				.itemCategories("goods")
+				.description("market description")
+				.build());
+		marketImageRepository.save(MarketImage.builder()
+				.market(marketA2)
+				.imageUrl("https://example.com/image2.png")
+				.sortOrder(0)
+				.build());
+		scrapRepository.save(Scrap.builder().user(userB).market(marketA2).build());
+		Comment commentOnSecondMarket = commentRepository.save(Comment.builder()
+				.market(marketA2).user(userB).content("userB on userA's second market").build());
 
 		// userB's market: survives. userA's own comment there is left exactly as
 		// posted (content/image_url untouched) — only the User row is redacted —
@@ -191,14 +221,17 @@ class UserFlowIntegrationTest {
 				.andExpect(jsonPath("$.success").value(true));
 
 		assertThat(marketRepository.findByUserId(userAId)).isEmpty();
+		assertThat(marketRepository.findById(marketA.getId())).isEmpty();
+		assertThat(marketRepository.findById(marketA2.getId())).isEmpty();
 		assertThat(marketRepository.findById(marketB.getId())).isPresent();
 		assertThat(marketImageRepository.count()).isZero();
 		assertThat(scrapRepository.count()).isZero();
 		assertThat(refreshTokenRepository.findByUserId(userAId)).isEmpty();
 
-		// comments tied to the deleted market are gone entirely, regardless of author
+		// comments tied to either deleted market are gone entirely, regardless of author
 		assertThat(commentRepository.findById(commentOnOwnMarket.getId())).isEmpty();
 		assertThat(commentRepository.findById(otherUserCommentOnOwnMarket.getId())).isEmpty();
+		assertThat(commentRepository.findById(commentOnSecondMarket.getId())).isEmpty();
 
 		// userA's comment on a surviving market is left as-is, not redacted or deleted —
 		// only the author's User row is soft-deleted (nickname substitution happens there).
