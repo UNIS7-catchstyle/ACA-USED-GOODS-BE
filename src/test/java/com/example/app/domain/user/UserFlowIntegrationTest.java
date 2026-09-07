@@ -213,13 +213,6 @@ class UserFlowIntegrationTest {
 		Comment replyToRedactedComment = commentRepository.save(Comment.builder()
 				.market(marketB).user(userB).parent(commentOnOtherMarket).content("userB's reply").build());
 
-		// userA also scraps userB's (surviving) market. Regression coverage for a bug
-		// where scrapService.deleteAllByUser()'s clearAutomatically bulk update (run
-		// to decrement marketB's scrap_count) detached the already-loaded User entity,
-		// silently dropping the softDelete() that runs afterward.
-		scrapRepository.save(Scrap.builder().user(userA).market(marketB).build());
-		marketRepository.incrementScrapCount(marketB.getId());
-
 		assertThat(refreshTokenRepository.findByUserId(userAId)).isPresent();
 
 		// 10 & 11. DELETE /api/users/me
@@ -233,7 +226,6 @@ class UserFlowIntegrationTest {
 		assertThat(marketRepository.findById(marketB.getId())).isPresent();
 		assertThat(marketImageRepository.count()).isZero();
 		assertThat(scrapRepository.count()).isZero();
-		assertThat(marketRepository.findById(marketB.getId()).orElseThrow().getScrapCount()).isZero();
 		assertThat(refreshTokenRepository.findByUserId(userAId)).isEmpty();
 
 		// comments tied to either deleted market are gone entirely, regardless of author
@@ -267,6 +259,48 @@ class UserFlowIntegrationTest {
 		JsonNode reLogin = login();
 		assertThat(reLogin.get("isNewUser").asBoolean()).isTrue();
 		assertThat(userRepository.count()).isEqualTo(3); // deleted userA + userB + new userA
+	}
+
+	// Regression test for a bug where withdraw() silently dropped the soft-delete:
+	// UserService.withdraw() loads the User once up front, then scrapService.deleteAllByUser()
+	// decrements scrap_count on every OTHER market the withdrawing user had scrapped via
+	// MarketRepository.decrementScrapCount(), which is @Modifying(clearAutomatically = true).
+	// That clears the whole persistence context, detaching the already-loaded User — so the
+	// softDelete() called afterward mutated a detached entity and never flushed. Only
+	// reproduces when the withdrawing user scrapped a market they don't own, since a market
+	// they do own is deleted (not decremented) by MarketService.deleteByOwner() instead.
+	@Test
+	void withdraw_afterScrappingAnotherUsersMarket_softDeletesUserAndDecrementsThatMarketsScrapCount() throws Exception {
+		JsonNode login = login();
+		String accessToken = login.get("accessToken").asText();
+		User userA = userRepository.findAll().get(0);
+		Long userAId = userA.getId();
+
+		User userB = userRepository.save(User.builder()
+				.provider(Provider.GOOGLE)
+				.providerId("scrap-bug-owner")
+				.nickname("owner user")
+				.build());
+		Market marketB = marketRepository.save(Market.builder()
+				.user(userB)
+				.category(Category.ETC)
+				.title("userB's market")
+				.itemCategories("goods")
+				.description("market description")
+				.build());
+
+		scrapRepository.save(Scrap.builder().user(userA).market(marketB).build());
+		marketRepository.incrementScrapCount(marketB.getId());
+		assertThat(marketRepository.findById(marketB.getId()).orElseThrow().getScrapCount()).isEqualTo(1);
+
+		mockMvc.perform(delete("/api/users/me").header("Authorization", "Bearer " + accessToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value(true));
+
+		User softDeletedUserA = userRepository.findById(userAId).orElseThrow();
+		assertThat(softDeletedUserA.getDeletedAt()).isNotNull();
+
+		assertThat(marketRepository.findById(marketB.getId()).orElseThrow().getScrapCount()).isZero();
 	}
 
 	private JsonNode login() throws Exception {
