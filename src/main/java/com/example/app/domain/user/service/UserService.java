@@ -42,11 +42,18 @@ public class UserService {
 
 	@Transactional
 	public void withdraw(Long userId) {
-		User user = getActiveUserOrThrow(userId);
+		getActiveUserOrThrow(userId);
 
 		marketService.deleteByOwner(userId);
 		scrapService.deleteAllByUser(userId);
 		refreshTokenRepository.deleteByUserId(userId);
+
+		// Re-fetch rather than reuse the User loaded above: scrapService.deleteAllByUser()
+		// decrements scrap_count on every OTHER market this user had scrapped via
+		// MarketRepository's clearAutomatically bulk update, which detaches everything
+		// in this persistence context (including that earlier User). softDelete() on a
+		// detached entity would silently never flush, so it's loaded fresh here instead.
+		User user = getActiveUserOrThrow(userId);
 
 		// Comments are deliberately left as-is (content, image_url) — only the user
 		// row itself is redacted. comment.user_id keeps pointing at this (now

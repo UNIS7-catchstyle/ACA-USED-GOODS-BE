@@ -213,6 +213,13 @@ class UserFlowIntegrationTest {
 		Comment replyToRedactedComment = commentRepository.save(Comment.builder()
 				.market(marketB).user(userB).parent(commentOnOtherMarket).content("userB's reply").build());
 
+		// userA also scraps userB's (surviving) market. Regression coverage for a bug
+		// where scrapService.deleteAllByUser()'s clearAutomatically bulk update (run
+		// to decrement marketB's scrap_count) detached the already-loaded User entity,
+		// silently dropping the softDelete() that runs afterward.
+		scrapRepository.save(Scrap.builder().user(userA).market(marketB).build());
+		marketRepository.incrementScrapCount(marketB.getId());
+
 		assertThat(refreshTokenRepository.findByUserId(userAId)).isPresent();
 
 		// 10 & 11. DELETE /api/users/me
@@ -226,6 +233,7 @@ class UserFlowIntegrationTest {
 		assertThat(marketRepository.findById(marketB.getId())).isPresent();
 		assertThat(marketImageRepository.count()).isZero();
 		assertThat(scrapRepository.count()).isZero();
+		assertThat(marketRepository.findById(marketB.getId()).orElseThrow().getScrapCount()).isZero();
 		assertThat(refreshTokenRepository.findByUserId(userAId)).isEmpty();
 
 		// comments tied to either deleted market are gone entirely, regardless of author
