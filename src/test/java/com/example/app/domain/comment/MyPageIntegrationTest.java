@@ -57,25 +57,60 @@ class MyPageIntegrationTest {
 
 		mockMvc.perform(get("/api/users/me/markets").header("Authorization", "Bearer " + tokenFor(user)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data").isArray())
-				.andExpect(jsonPath("$.data.length()").value(0));
+				.andExpect(jsonPath("$.data.totalCount").value(0))
+				.andExpect(jsonPath("$.data.items.length()").value(0))
+				.andExpect(jsonPath("$.data.hasNext").value(false));
 	}
 
 	@Test
-	void myMarkets_twoMarkets_returnsBothIncludingClosedOnes() throws Exception {
+	void myMarkets_twoMarkets_returnsBothIncludingClosedOnesOrderedByCreatedAtDesc() throws Exception {
 		User owner = createAgreedUser("owner15");
-		Market marketA = seedMarket(owner, Category.ETC, false);
-		Market marketB = seedMarket(owner, Category.ETC, true);
+		Market older = seedMarket(owner, Category.ETC, false);
+		Market newer = seedMarket(owner, Category.ETC, true);
 
 		MvcResult result = mockMvc.perform(get("/api/users/me/markets").header("Authorization", "Bearer " + tokenFor(owner)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.length()").value(2))
+				.andExpect(jsonPath("$.data.totalCount").value(2))
+				.andExpect(jsonPath("$.data.items.length()").value(2))
 				.andReturn();
 
-		JsonNode items = dataOf(result);
-		Set<Long> ids = new HashSet<>();
-		items.forEach(item -> ids.add(item.get("id").asLong()));
-		assertThat(ids).containsExactlyInAnyOrder(marketA.getId(), marketB.getId());
+		JsonNode items = dataOf(result).get("items");
+		assertThat(items.get(0).get("id").asLong()).isEqualTo(newer.getId());
+		assertThat(items.get(1).get("id").asLong()).isEqualTo(older.getId());
+		assertThat(items.get(0).get("isClosed").asBoolean()).isTrue();
+	}
+
+	@Test
+	void myMarkets_cursorPagination_noDuplicatesOrGaps() throws Exception {
+		User owner = createAgreedUser("owner21");
+		String token = tokenFor(owner);
+		Set<Long> expectedIds = new HashSet<>();
+		for (int i = 0; i < 5; i++) {
+			expectedIds.add(seedMarket(owner, Category.ETC, false).getId());
+		}
+
+		Set<Long> collected = new HashSet<>();
+		String cursor = null;
+		boolean hasNext = true;
+		int pages = 0;
+		while (hasNext) {
+			var requestBuilder = get("/api/users/me/markets").param("size", "2").header("Authorization", "Bearer " + token);
+			if (cursor != null) {
+				requestBuilder = requestBuilder.param("cursor", cursor);
+			}
+			MvcResult result = mockMvc.perform(requestBuilder).andExpect(status().isOk()).andReturn();
+			JsonNode data = dataOf(result);
+			data.get("items").forEach(item -> collected.add(item.get("id").asLong()));
+			hasNext = data.get("hasNext").asBoolean();
+			cursor = hasNext ? data.get("nextCursor").asText() : null;
+			pages++;
+			if (pages > 10) {
+				throw new AssertionError("too many pages, pagination likely broken");
+			}
+		}
+
+		assertThat(pages).isEqualTo(3);
+		assertThat(collected).isEqualTo(expectedIds);
 	}
 
 	@Test

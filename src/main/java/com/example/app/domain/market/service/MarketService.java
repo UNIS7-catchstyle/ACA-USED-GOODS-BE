@@ -92,9 +92,29 @@ public class MarketService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<MarketSummary> getMyMarkets(Long userId) {
-		List<Market> markets = marketRepository.findByUserId(userId);
-		return marketSummaryAssembler.assemble(markets, userId);
+	public CursorPageResponse<MarketSummary> getMyMarkets(Long userId, String cursorParam, int size) {
+		LocalDateTime cursorCreatedAt = null;
+		Long cursorId = null;
+		if (StringUtils.hasText(cursorParam)) {
+			try {
+				Cursor cursor = Cursor.decode(cursorParam);
+				cursorCreatedAt = toLocalDateTime(cursor.key1());
+				cursorId = cursor.key2();
+			} catch (IllegalArgumentException e) {
+				throw new BusinessException(ErrorCode.INVALID_CURSOR);
+			}
+		}
+
+		long totalCount = marketRepository.countByUserId(userId);
+		List<Market> fetched = marketRepository.findPageByUserId(userId, cursorCreatedAt, cursorId, PageRequest.of(0, size + 1));
+
+		boolean hasNext = fetched.size() > size;
+		List<Market> pageMarkets = hasNext ? fetched.subList(0, size) : fetched;
+
+		List<MarketSummary> items = marketSummaryAssembler.assemble(pageMarkets, userId);
+
+		String nextCursor = hasNext ? cursorOf(pageMarkets.get(pageMarkets.size() - 1)).encode() : null;
+		return new CursorPageResponse<>(totalCount, items, nextCursor, hasNext);
 	}
 
 	@Transactional

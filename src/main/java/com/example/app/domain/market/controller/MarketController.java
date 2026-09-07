@@ -28,8 +28,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 // No class-level @RequestMapping: /api/users/me/markets lives here by domain (same
 // principle as ScrapController/CommentController owning their own /users/me/*
 // endpoints), and a shared "/api/markets" prefix would wrongly get prepended to it.
@@ -79,10 +77,13 @@ public class MarketController {
 		return ApiResponse.success(marketService.update(userId, id, request));
 	}
 
-	@Operation(summary = "내가 등록한 마켓 목록 조회")
+	@Operation(summary = "내가 등록한 마켓 목록 조회 (커서 페이징)")
 	@SecurityRequirement(name = "bearerAuth")
 	@GetMapping("/api/users/me/markets")
-	public ApiResponse<List<MarketSummary>> myMarkets(@CurrentUser Long userId) {
-		return ApiResponse.success(marketService.getMyMarkets(userId));
+	public ApiResponse<CursorPageResponse<MarketSummary>> myMarkets(
+			@CurrentUser Long userId,
+			@RequestParam(required = false) String cursor,
+			@RequestParam(defaultValue = "20") @Min(1) @Max(50) int size) {
+		return ApiResponse.success(marketService.getMyMarkets(userId, cursor, size));
 	}
 }

@@ -18,6 +18,18 @@ public interface MarketRepository extends JpaRepository<Market, Long> {
 
 	long countByUserId(Long userId);
 
+	// size+1 rows requested via Pageable(0, size+1); mirrors findPage's cursor shape
+	// below, scoped to one user's own markets instead of a category-wide feed.
+	@Query("SELECT m FROM Market m WHERE m.user.id = :userId "
+			+ "AND (:cursorCreatedAt IS NULL OR m.createdAt < :cursorCreatedAt "
+			+ "     OR (m.createdAt = :cursorCreatedAt AND m.id < :cursorId)) "
+			+ "ORDER BY m.createdAt DESC, m.id DESC")
+	List<Market> findPageByUserId(
+			@Param("userId") Long userId,
+			@Param("cursorCreatedAt") LocalDateTime cursorCreatedAt,
+			@Param("cursorId") Long cursorId,
+			Pageable pageable);
+
 	@Query("SELECT m FROM Market m JOIN FETCH m.user WHERE m.id = :id")
 	Optional<Market> findByIdWithUser(@Param("id") Long id);
 
